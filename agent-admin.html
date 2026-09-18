@@ -399,6 +399,8 @@
         a.id_document_path_back ? `<button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path_back)}">身分証明書（裏）</button>` : '',
       ].join(' ');
       const detailHtml = `
+        <div class="item-meta">種別：${a.entity_type === 'corporate' ? '法人' : '個人'}</div>
+        <div class="item-meta">応募日時：${a.created_at ? new Date(a.created_at).toLocaleString('ja-JP') : '不明'}</div>
         <div class="item-meta">住所：${escapeHtml(a.address || '未入力')}</div>
         <div class="item-meta">メール：${escapeHtml(a.email || '未入力')}</div>
         <div class="item-meta">LINE ID：${escapeHtml(a.line_id || '未入力')}</div>
