@@ -344,7 +344,8 @@
       showMsg('success', 'ご登録ありがとうございます。内容を確認の上、担当者よりご連絡いたします。');
     } catch (err) {
       console.error(err);
-      showMsg('error', '送信中にエラーが発生しました。時間をおいて再度お試しください。');
+      const detail = (err && (err.message || err.error_description || err.statusText)) || JSON.stringify(err);
+      showMsg('error', `送信中にエラーが発生しました：${escapeHtml(detail)}`);
       submitBtn.disabled = false;
       submitBtn.textContent = '登録する';
     }
