@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>営業パートナー登録 ｜ ENELEAGE Zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --bg: #F4F5F7; --card: #FFFFFF; --card-border: #E1E4E9;
+    --text: #1B2029; --text-dim: #6B7280; --text-faint: #9AA1AC;
+    --accent: #A65A2E; --accent-soft: #F1E2D6;
+    --accent-2: #3E6F68; --accent-2-soft: #DEEBE8;
+    --track: #E6E8EC; --danger: #B3492F; --danger-soft: #F5E1DC; --focus: #A65A2E;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161C; --card: #1D2027; --card-border: #2C303A;
+      --text: #ECEDEF; --text-dim: #A2A8B4; --text-faint: #767C88;
+      --accent: #D8935F; --accent-soft: #3A2C22;
+      --accent-2: #6FA89E; --accent-2-soft: #223330;
+      --track: #2A2E37; --danger: #D9705A; --danger-soft: #3A2420; --focus: #D8935F;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body {
+    font-family: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    color: var(--text); padding: 20px 14px 56px; max-width: 560px; margin: 0 auto;
+  }
+  header { padding: 6px 2px 18px; }
+  .eyebrow { font-size: 12.5px; color: var(--text-faint); letter-spacing: 0.02em; margin: 0 0 4px; }
+  h1 { font-size: 21px; font-weight: 700; margin: 0 0 6px; letter-spacing: -0.01em; }
+  .lede { font-size: 13px; color: var(--text-dim); line-height: 1.6; margin: 0; }
+  .card {
+    background: var(--card); border: 1px solid var(--card-border); border-radius: 14px;
+    padding: 18px 16px; margin-bottom: 14px;
+  }
+  .card h2 { font-size: 14px; font-weight: 700; margin: 0 0 14px; }
+  .toggle { display: flex; gap: 6px; background: var(--track); border-radius: 10px; padding: 4px; margin-bottom: 14px; }
+  .toggle button {
+    flex: 1; border: none; background: transparent; padding: 10px 8px; font-family: inherit;
+    font-size: 13.5px; font-weight: 500; color: var(--text-dim); border-radius: 8px; cursor: pointer;
+  }
+  .toggle button.active { background: var(--card); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  label.field-label { display: block; font-size: 12.5px; color: var(--text-dim); margin-bottom: 6px; }
+  label.field-label .req { color: var(--accent); margin-left: 2px; }
+  .field { margin-bottom: 14px; }
+  .field-row { display: flex; gap: 10px; }
+  .field-row .field { flex: 1; }
+  input[type="text"], input[type="tel"], input[type="file"], select {
+    width: 100%; font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 11px;
+  }
+  input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+  .checkbox-chip {
+    display: inline-flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 999px;
+    border: 1px solid var(--card-border); font-size: 13px; cursor: pointer; user-select: none;
+  }
+  .checkbox-chip input { accent-color: var(--accent); }
+  .checkbox-chip.checked { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .hint { font-size: 11.5px; color: var(--text-faint); margin-top: 6px; line-height: 1.6; }
+  .btn {
+    width: 100%; font-family: inherit; font-size: 15px; font-weight: 700; color: #fff;
+    background: var(--accent); border: none; border-radius: 10px; padding: 14px; cursor: pointer;
+  }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .msg { border-radius: 10px; padding: 14px; font-size: 13.5px; line-height: 1.7; margin-bottom: 14px; }
+  .msg.success { background: var(--accent-2-soft); color: var(--accent-2); }
+  .msg.error { background: var(--danger-soft); color: var(--danger); }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<header>
+  <p class="eyebrow">ENELEAGE Zero</p>
+  <h1>営業パートナー登録</h1>
+  <p class="lede">個人・法人どちらでもご登録いただけます。振込先・身分証明書は歩合のお支払いに必要な情報です。</p>
+</header>
+
+<div id="msg-area"></div>
+
+<form id="reg-form">
+  <div class="card">
+    <h2>種別</h2>
+    <div class="toggle" role="group" aria-label="登録種別">
+      <button type="button" id="btn-individual" class="active" aria-pressed="true">個人</button>
+      <button type="button" id="btn-corporate" aria-pressed="false">法人</button>
+    </div>
+    <div class="field" id="company-field" hidden>
+      <label class="field-label" for="company-name">法人名<span class="req">*</span></label>
+      <input type="text" id="company-name" placeholder="株式会社◯◯">
+    </div>
+    <div class="field">
+      <label class="field-label" for="name" id="name-label">氏名<span class="req">*</span></label>
+      <input type="text" id="name" placeholder="山田 太郎" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="address">住所<span class="req">*</span></label>
+      <input type="text" id="address" placeholder="大阪府大阪市...">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label" for="phone">電話番号<span class="req">*</span></label>
+        <input type="tel" id="phone" placeholder="090-0000-0000">
+      </div>
+      <div class="field">
+        <label class="field-label" for="line-id">LINE ID</label>
+        <input type="text" id="line-id" placeholder="任意">
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="sales-area">営業エリア<span class="req">*</span></label>
+      <input type="text" id="sales-area" placeholder="例：大阪市内、関西一円">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>インボイス登録区分</h2>
+    <div class="toggle" role="group" aria-label="インボイス登録区分">
+      <button type="button" id="btn-inv-registered" class="active" aria-pressed="true">登録済</button>
+      <button type="button" id="btn-inv-unregistered" aria-pressed="false">未登録</button>
+    </div>
+    <div class="field" id="invoice-number-field">
+      <label class="field-label" for="invoice-number">適格請求書発行事業者登録番号</label>
+      <input type="text" id="invoice-number" placeholder="T0000000000000">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>振込先</h2>
+    <div class="field">
+      <label class="field-label" for="bank-name">銀行名<span class="req">*</span></label>
+      <input type="text" id="bank-name" placeholder="◯◯銀行">
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label class="field-label" for="bank-branch">支店名<span class="req">*</span></label>
+        <input type="text" id="bank-branch" placeholder="◯◯支店">
+      </div>
+      <div class="field">
+        <label class="field-label" for="bank-account-type">口座種別<span class="req">*</span></label>
+        <select id="bank-account-type">
+          <option value="普通">普通</option>
+          <option value="当座">当座</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label class="field-label" for="bank-account-number">口座番号<span class="req">*</span></label>
+      <input type="text" id="bank-account-number" placeholder="1234567" inputmode="numeric">
+    </div>
+    <div class="field">
+      <label class="field-label" for="bank-account-holder">口座名義（カナ）<span class="req">*</span></label>
+      <input type="text" id="bank-account-holder" placeholder="ヤマダ タロウ">
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>身分証明書</h2>
+    <div class="field">
+      <label class="field-label" for="id-document">運転免許証・マイナンバーカードなどの写真<span class="req">*</span></label>
+      <input type="file" id="id-document" accept="image/*,application/pdf">
+      <p class="hint">画像またはPDFでアップロードしてください。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>主要営業品目</h2>
+    <div class="checkbox-group" id="products-group">
+      <label class="checkbox-chip"><input type="checkbox" value="太陽光"> 太陽光</label>
+      <label class="checkbox-chip"><input type="checkbox" value="リフォーム・外壁塗装"> リフォーム・外壁塗装</label>
+      <label class="checkbox-chip"><input type="checkbox" value="注文住宅"> 注文住宅</label>
+      <label class="checkbox-chip"><input type="checkbox" value="その他"> その他</label>
+    </div>
+  </div>
+
+  <button type="submit" class="btn" id="submit-btn">登録する</button>
+</form>
+
+<script>
+  const SUPABASE_URL = "https://escdzmgtgqssbqhqlubw.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2R6bWd0Z3Fzc2JxaHFsdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MTcwOTMsImV4cCI6MjEwNTI5MzA5M30.s5kTmvDOmxqIxBW-Eve1M21mUTpkr0CnMt4Edv_JZdk";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  let entityType = 'individual';
+  let invoiceRegistered = true;
+
+  const btnIndividual = document.getElementById('btn-individual');
+  const btnCorporate = document.getElementById('btn-corporate');
+  const companyField = document.getElementById('company-field');
+  const companyNameInput = document.getElementById('company-name');
+  const nameLabel = document.getElementById('name-label');
+
+  btnIndividual.addEventListener('click', () => {
+    entityType = 'individual';
+    btnIndividual.classList.add('active'); btnIndividual.setAttribute('aria-pressed', 'true');
+    btnCorporate.classList.remove('active'); btnCorporate.setAttribute('aria-pressed', 'false');
+    companyField.hidden = true;
+    nameLabel.innerHTML = '氏名<span class="req">*</span>';
+  });
+  btnCorporate.addEventListener('click', () => {
+    entityType = 'corporate';
+    btnCorporate.classList.add('active'); btnCorporate.setAttribute('aria-pressed', 'true');
+    btnIndividual.classList.remove('active'); btnIndividual.setAttribute('aria-pressed', 'false');
+    companyField.hidden = false;
+    nameLabel.innerHTML = '担当者名<span class="req">*</span>';
+  });
+
+  const btnInvRegistered = document.getElementById('btn-inv-registered');
+  const btnInvUnregistered = document.getElementById('btn-inv-unregistered');
+  const invoiceNumberField = document.getElementById('invoice-number-field');
+
+  btnInvRegistered.addEventListener('click', () => {
+    invoiceRegistered = true;
+    btnInvRegistered.classList.add('active'); btnInvRegistered.setAttribute('aria-pressed', 'true');
+    btnInvUnregistered.classList.remove('active'); btnInvUnregistered.setAttribute('aria-pressed', 'false');
+    invoiceNumberField.hidden = false;
+  });
+  btnInvUnregistered.addEventListener('click', () => {
+    invoiceRegistered = false;
+    btnInvUnregistered.classList.add('active'); btnInvUnregistered.setAttribute('aria-pressed', 'true');
+    btnInvRegistered.classList.remove('active'); btnInvRegistered.setAttribute('aria-pressed', 'false');
+    invoiceNumberField.hidden = true;
+  });
+
+  document.querySelectorAll('#products-group .checkbox-chip').forEach(chip => {
+    const cb = chip.querySelector('input');
+    cb.addEventListener('change', () => chip.classList.toggle('checked', cb.checked));
+  });
+
+  function showMsg(type, text) {
+    document.getElementById('msg-area').innerHTML = `<div class="msg ${type}">${text}</div>`;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  const form = document.getElementById('reg-form');
+  const submitBtn = document.getElementById('submit-btn');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const name = document.getElementById('name').value.trim();
+    const address = document.getElementById('address').value.trim();
+    const phone = document.getElementById('phone').value.trim();
+    const salesArea = document.getElementById('sales-area').value.trim();
+    const bankName = document.getElementById('bank-name').value.trim();
+    const bankBranch = document.getElementById('bank-branch').value.trim();
+    const bankAccountNumber = document.getElementById('bank-account-number').value.trim();
+    const bankAccountHolder = document.getElementById('bank-account-holder').value.trim();
+    const companyName = document.getElementById('company-name').value.trim();
+    const idFile = document.getElementById('id-document').files[0];
+
+    if (!name || !address || !phone || !salesArea || !bankName || !bankBranch || !bankAccountNumber || !bankAccountHolder) {
+      showMsg('error', '必須項目（*）が未入力の箇所があります。ご確認ください。');
+      return;
+    }
+    if (entityType === 'corporate' && !companyName) {
+      showMsg('error', '法人名をご入力ください。');
+      return;
+    }
+    if (!idFile) {
+      showMsg('error', '身分証明書の写真をアップロードしてください。');
+      return;
+    }
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = '送信中...';
+
+    try {
+      const ext = idFile.name.split('.').pop();
+      const path = `applications/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+      const { error: uploadError } = await sb.storage.from('id-documents').upload(path, idFile);
+      if (uploadError) throw uploadError;
+
+      const mainProducts = [...document.querySelectorAll('#products-group input:checked')].map(cb => cb.value);
+
+      const { error: insertError } = await sb.from('sales_agents').insert({
+        entity_type: entityType,
+        company_name: entityType === 'corporate' ? companyName : null,
+        name,
+        address,
+        phone,
+        line_id: document.getElementById('line-id').value.trim(),
+        sales_area: salesArea,
+        invoice_registered: invoiceRegistered,
+        invoice_number: invoiceRegistered ? document.getElementById('invoice-number').value.trim() : null,
+        bank_name: bankName,
+        bank_branch: bankBranch,
+        bank_account_type: document.getElementById('bank-account-type').value,
+        bank_account_number: bankAccountNumber,
+        bank_account_holder: bankAccountHolder,
+        id_document_path: path,
+        main_products: mainProducts,
+        status: 'pending',
+      });
+      if (insertError) throw insertError;
+
+      form.hidden = true;
+      showMsg('success', 'ご登録ありがとうございます。内容を確認の上、担当者よりご連絡いたします。');
+    } catch (err) {
+      console.error(err);
+      showMsg('error', '送信中にエラーが発生しました。時間をおいて再度お試しください。');
+      submitBtn.disabled = false;
+      submitBtn.textContent = '登録する';
+    }
+  });
+</script>
+
+</body>
+</html>

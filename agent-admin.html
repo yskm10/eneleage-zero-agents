@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>営業マン管理 ｜ ENELEAGE Zero</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<style>
+  :root {
+    --bg: #F4F5F7; --card: #FFFFFF; --card-border: #E1E4E9;
+    --text: #1B2029; --text-dim: #6B7280; --text-faint: #9AA1AC;
+    --accent: #A65A2E; --accent-soft: #F1E2D6;
+    --accent-2: #3E6F68; --accent-2-soft: #DEEBE8;
+    --track: #E6E8EC; --row-alt: #FAFAFB; --row-current: #FBF2EA;
+    --danger: #B3492F; --danger-soft: #F5E1DC; --focus: #A65A2E;
+    --warn: #9A7A2E; --warn-soft: #F3EAD2;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #14161C; --card: #1D2027; --card-border: #2C303A;
+      --text: #ECEDEF; --text-dim: #A2A8B4; --text-faint: #767C88;
+      --accent: #D8935F; --accent-soft: #3A2C22;
+      --accent-2: #6FA89E; --accent-2-soft: #223330;
+      --track: #2A2E37; --row-alt: #20232B; --row-current: #2E2416;
+      --danger: #D9705A; --danger-soft: #3A2420; --focus: #D8935F;
+      --warn: #D9BB6E; --warn-soft: #362E1A;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body {
+    font-family: 'Zen Kaku Gothic New', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+    color: var(--text); padding: 20px 14px 56px; max-width: 560px; margin: 0 auto;
+  }
+  header { padding: 6px 2px 16px; display: flex; justify-content: space-between; align-items: flex-start; }
+  .eyebrow { font-size: 12.5px; color: var(--text-faint); letter-spacing: 0.02em; margin: 0 0 4px; }
+  h1 { font-size: 20px; font-weight: 700; margin: 0; letter-spacing: -0.01em; }
+  .logout-btn { font-family: inherit; font-size: 12px; color: var(--text-dim); background: none; border: 1px solid var(--card-border); border-radius: 8px; padding: 7px 12px; cursor: pointer; }
+  .tabs { display: flex; gap: 6px; background: var(--track); border-radius: 10px; padding: 4px; margin-bottom: 16px; position: sticky; top: 8px; z-index: 5; }
+  .tab-btn { flex: 1; border: none; background: transparent; padding: 10px 6px; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-dim); border-radius: 8px; cursor: pointer; }
+  .tab-btn.active { background: var(--card); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  section[hidden] { display: none; }
+  .card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 18px 16px; margin-bottom: 14px; }
+  .card h2 { font-size: 14px; font-weight: 700; margin: 0 0 14px; }
+  .toggle { display: flex; gap: 6px; background: var(--track); border-radius: 10px; padding: 4px; margin-bottom: 18px; }
+  .toggle button { flex: 1; border: none; background: transparent; padding: 9px 8px; font-family: inherit; font-size: 13px; font-weight: 500; color: var(--text-dim); border-radius: 8px; cursor: pointer; }
+  .toggle button.active { background: var(--card); color: var(--text); font-weight: 700; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  label.field-label { display: block; font-size: 12px; color: var(--text-dim); margin-bottom: 6px; }
+  .field { margin-bottom: 14px; }
+  input[type="text"], input[type="email"], input[type="password"], input[type="date"], select {
+    width: 100%; font-family: inherit; font-size: 14.5px; color: var(--text); background: var(--bg);
+    border: 1px solid var(--card-border); border-radius: 8px; padding: 10px 11px;
+  }
+  input:focus-visible, select:focus-visible { outline: 2px solid var(--focus); outline-offset: 1px; }
+  .price-row { display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px; }
+  input[type="number"] { font-family: inherit; font-variant-numeric: tabular-nums; font-size: 26px; font-weight: 700; width: 108px; border: none; background: transparent; color: var(--text); padding: 0; border-bottom: 2px solid var(--card-border); }
+  input[type="number"]:focus-visible { outline: none; border-bottom-color: var(--focus); }
+  .unit { font-size: 14px; color: var(--text-dim); }
+  input[type="range"] { width: 100%; accent-color: var(--accent); height: 4px; }
+  .range-labels { display: flex; justify-content: space-between; font-size: 11px; color: var(--text-faint); margin: 4px 0 16px; }
+  .result-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 22px 16px; margin-bottom: 14px; text-align: center; }
+  .result-label { font-size: 12px; color: var(--text-dim); margin-bottom: 8px; }
+  .result-value { font-variant-numeric: tabular-nums; font-size: 38px; font-weight: 900; color: var(--accent); letter-spacing: -0.01em; line-height: 1.1; }
+  .result-value .yen { font-size: 18px; font-weight: 700; margin-right: 2px; }
+  .result-value .man { font-size: 18px; font-weight: 700; margin-left: 4px; }
+  .breakdown { margin-top: 12px; font-size: 12.5px; color: var(--text-dim); line-height: 1.7; }
+  .breakdown .formula { font-variant-numeric: tabular-nums; color: var(--text); }
+  .flag { display: inline-block; margin-top: 10px; padding: 5px 10px; border-radius: 999px; font-size: 11px; font-weight: 500; }
+  .flag.approve { background: var(--danger-soft); color: var(--danger); }
+  .table-card { background: var(--card); border: 1px solid var(--card-border); border-radius: 14px; padding: 16px 0 4px; }
+  .table-title { font-size: 13px; font-weight: 700; padding: 0 16px 12px; }
+  .table-scroll { overflow-x: auto; padding: 0 16px 12px; }
+  table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; font-size: 12.5px; }
+  thead th { text-align: right; font-weight: 500; color: var(--text-faint); font-size: 11px; padding: 0 6px 8px; border-bottom: 1px solid var(--card-border); }
+  thead th:first-child, tbody td:first-child { text-align: left; }
+  tbody td { text-align: right; padding: 7px 6px; color: var(--text); }
+  tbody tr:nth-child(even) { background: var(--row-alt); }
+  tbody tr.current-row { background: var(--row-current); font-weight: 700; }
+  tbody tr.current-row td:first-child { color: var(--accent); }
+  .legend { display: flex; gap: 12px; padding: 10px 16px 2px; font-size: 11px; color: var(--text-faint); border-top: 1px solid var(--card-border); margin-top: 2px; flex-wrap: wrap; }
+  .footnote { font-size: 11.5px; color: var(--text-faint); line-height: 1.7; padding: 14px 2px 0; }
+  .btn { width: 100%; font-family: inherit; font-size: 14.5px; font-weight: 700; color: #fff; background: var(--accent); border: none; border-radius: 9px; padding: 12px; cursor: pointer; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .item-row { display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; padding: 12px 0; border-bottom: 1px solid var(--card-border); }
+  .item-row:last-child { border-bottom: none; }
+  .item-title { font-size: 14.5px; font-weight: 700; }
+  .item-meta { font-size: 12px; color: var(--text-dim); margin-top: 3px; line-height: 1.6; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 10.5px; font-weight: 700; margin-right: 6px; margin-bottom: 3px; }
+  .badge.registered { background: var(--accent-2-soft); color: var(--accent-2); }
+  .badge.unregistered { background: var(--track); color: var(--text-dim); }
+  .badge.pending { background: var(--warn-soft); color: var(--warn); }
+  .badge.active { background: var(--accent-2-soft); color: var(--accent-2); }
+  .badge.inactive { background: var(--track); color: var(--text-dim); }
+  .badge.rejected { background: var(--danger-soft); color: var(--danger); }
+  .row-actions { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
+  .icon-btn { font-family: inherit; font-size: 11.5px; color: var(--text-faint); background: none; border: none; padding: 4px 2px; cursor: pointer; }
+  .icon-btn.danger { color: var(--danger); }
+  .icon-btn.link { color: var(--accent); text-decoration: underline; }
+  .empty-state { font-size: 13px; color: var(--text-faint); text-align: center; padding: 18px 4px; }
+  select.status-select { font-size: 12px; padding: 5px 8px; width: auto; }
+  .summary-strip { display: flex; gap: 10px; margin-bottom: 14px; }
+  .summary-box { flex: 1; background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 10px; text-align: center; }
+  .summary-box .num { font-variant-numeric: tabular-nums; font-size: 18px; font-weight: 900; color: var(--accent); }
+  .summary-box .lbl { font-size: 10.5px; color: var(--text-faint); margin-top: 2px; }
+  .login-wrap { max-width: 360px; margin: 60px auto; }
+  .error-text { color: var(--danger); font-size: 12.5px; margin-top: 8px; }
+  [hidden] { display: none !important; }
+</style>
+</head>
+<body>
+
+<div id="login-view" class="login-wrap">
+  <div class="card">
+    <h2>ログイン</h2>
+    <div class="field">
+      <label class="field-label" for="login-email">メールアドレス</label>
+      <input type="email" id="login-email" autocomplete="username">
+    </div>
+    <div class="field">
+      <label class="field-label" for="login-password">パスワード</label>
+      <input type="password" id="login-password" autocomplete="current-password">
+    </div>
+    <button type="button" class="btn" id="login-btn">ログイン</button>
+    <p class="error-text" id="login-error" hidden></p>
+  </div>
+</div>
+
+<div id="main-view" hidden>
+  <header>
+    <div>
+      <p class="eyebrow">ENELEAGE Zero 販売代理</p>
+      <h1>営業マン管理</h1>
+    </div>
+    <button type="button" class="logout-btn" id="logout-btn">ログアウト</button>
+  </header>
+
+  <nav class="tabs" role="tablist">
+    <button type="button" class="tab-btn active" data-tab="calc" role="tab" aria-selected="true">計算</button>
+    <button type="button" class="tab-btn" data-tab="agents" role="tab" aria-selected="false">応募者</button>
+    <button type="button" class="tab-btn" data-tab="deals" role="tab" aria-selected="false">案件</button>
+  </nav>
+
+  <section id="tab-calc">
+    <div class="card">
+      <div class="toggle" role="group" aria-label="インボイス登録区分">
+        <button type="button" id="btn-registered" class="active" aria-pressed="true">インボイス登録済</button>
+        <button type="button" id="btn-unregistered" aria-pressed="false">未登録</button>
+      </div>
+      <label class="field-label" for="price-input">売価（本体・税別）</label>
+      <div class="price-row">
+        <input type="number" id="price-input" value="200" min="100" max="400" step="1" inputmode="numeric">
+        <span class="unit">万円</span>
+      </div>
+      <input type="range" id="price-slider" min="100" max="400" step="1" value="200" aria-label="売価スライダー">
+      <div class="range-labels"><span>100万円</span><span>400万円</span></div>
+    </div>
+    <div class="result-card">
+      <p class="result-label">支払う歩合</p>
+      <div class="result-value"><span class="yen">¥</span><span id="result-amount">40.0</span><span class="man">万円</span></div>
+      <div class="breakdown" id="breakdown"></div>
+      <div id="flag-area"></div>
+    </div>
+    <div class="table-card">
+      <p class="table-title">早見表（10万円刻み）</p>
+      <div class="table-scroll">
+        <table><thead><tr><th>売価</th><th>登録済</th><th>未登録</th></tr></thead><tbody id="table-body"></tbody></table>
+      </div>
+      <div class="legend"><span>登録済 基準40万円・還元率60%</span><span>未登録 基準37.5万円・還元率58%</span></div>
+    </div>
+    <p class="footnote">160万円を下回る値引きは歩合が0円になるため、事前承認が必要です。</p>
+  </section>
+
+  <section id="tab-agents" hidden>
+    <div class="summary-strip">
+      <div class="summary-box"><div class="num" id="agent-count-total">0</div><div class="lbl">登録数</div></div>
+      <div class="summary-box"><div class="num" id="agent-count-pending">0</div><div class="lbl">審査中</div></div>
+      <div class="summary-box"><div class="num" id="agent-count-active">0</div><div class="lbl">稼働中</div></div>
+    </div>
+    <div class="card">
+      <h2>応募者・営業マン一覧</h2>
+      <div id="agent-list"><p class="empty-state">読み込み中...</p></div>
+    </div>
+  </section>
+
+  <section id="tab-deals" hidden>
+    <div class="card">
+      <h2>案件を記録</h2>
+      <div class="field">
+        <label class="field-label" for="deal-agent-select">営業マン</label>
+        <select id="deal-agent-select"><option value="">稼働中の営業マンがいません</option></select>
+      </div>
+      <div class="field">
+        <label class="field-label" for="deal-price-input">売価（本体・税別・万円）</label>
+        <input type="number" id="deal-price-input" value="200" min="0" step="1" inputmode="numeric">
+      </div>
+      <div class="field">
+        <label class="field-label" for="deal-date-input">成約日</label>
+        <input type="date" id="deal-date-input">
+      </div>
+      <div class="field">
+        <label class="field-label" for="deal-note-input">メモ（任意）</label>
+        <input type="text" id="deal-note-input" placeholder="顧客名、案件の補足など">
+      </div>
+      <div class="result-card" id="deal-preview-card">
+        <p class="result-label">この案件の歩合（見込み）</p>
+        <div class="result-value"><span class="yen">¥</span><span id="deal-preview-amount">—</span><span class="man">万円</span></div>
+      </div>
+      <button type="button" class="btn" id="deal-add-btn">案件を記録</button>
+    </div>
+    <div class="summary-strip">
+      <div class="summary-box"><div class="num" id="summary-count">0</div><div class="lbl">件数</div></div>
+      <div class="summary-box"><div class="num" id="summary-total">0.0</div><div class="lbl">歩合合計(万円)</div></div>
+      <div class="summary-box"><div class="num" id="summary-unpaid">0.0</div><div class="lbl">未払い(万円)</div></div>
+    </div>
+    <div class="card">
+      <h2>案件一覧</h2>
+      <div id="deal-list"><p class="empty-state">読み込み中...</p></div>
+    </div>
+  </section>
+</div>
+
+<script>
+  const SUPABASE_URL = "https://escdzmgtgqssbqhqlubw.supabase.co";
+  const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVzY2R6bWd0Z3Fzc2JxaHFsdWJ3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODk3MTcwOTMsImV4cCI6MjEwNTI5MzA5M30.s5kTmvDOmxqIxBW-Eve1M21mUTpkr0CnMt4Edv_JZdk";
+  const sb = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  // ===================== 歩合計算ロジック =====================
+  const BASE_PRICE = 200;
+  const BASE_COMMISSION_REGISTERED = 40;
+  const BASE_COMMISSION_UNREGISTERED = 37.5;
+  const RATE_REGISTERED = 0.60;
+  const RATE_UNREGISTERED = 0.58;
+  const FLOOR_PRICE = 160;
+  const DEAL_STATUSES = ["成約", "施工完了", "歩合支払済"];
+  const AGENT_STATUSES = ["pending", "active", "inactive", "rejected"];
+  const AGENT_STATUS_LABEL = { pending: "審査中", active: "稼働中", inactive: "休止中", rejected: "却下" };
+
+  function fmt(n) { return n.toLocaleString('ja-JP', { minimumFractionDigits: 1, maximumFractionDigits: 1 }); }
+  function clampPrice(v) { return Math.min(400, Math.max(100, v)); }
+  function calcCommission(price, registered) {
+    const rate = registered ? RATE_REGISTERED : RATE_UNREGISTERED;
+    const base = registered ? BASE_COMMISSION_REGISTERED : BASE_COMMISSION_UNREGISTERED;
+    const diff = price - BASE_PRICE;
+    if (diff >= 0) return base + diff * rate;
+    return Math.max(0, base + diff);
+  }
+  function escapeHtml(str) {
+    const div = document.createElement('div');
+    div.textContent = str == null ? '' : String(str);
+    return div.innerHTML;
+  }
+  function todayStr() {
+    const d = new Date(); const pad = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  }
+
+  // ===================== タブ切り替え =====================
+  const tabButtons = document.querySelectorAll('.tab-btn');
+  const tabSections = { calc: document.getElementById('tab-calc'), agents: document.getElementById('tab-agents'), deals: document.getElementById('tab-deals') };
+  tabButtons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      tabButtons.forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected', 'false'); });
+      btn.classList.add('active'); btn.setAttribute('aria-selected', 'true');
+      Object.entries(tabSections).forEach(([key, el]) => { el.hidden = (key !== btn.dataset.tab); });
+    });
+  });
+
+  // ===================== 計算タブ =====================
+  let isRegistered = true;
+  const priceInput = document.getElementById('price-input');
+  const priceSlider = document.getElementById('price-slider');
+  const btnRegistered = document.getElementById('btn-registered');
+  const btnUnregistered = document.getElementById('btn-unregistered');
+  const resultAmount = document.getElementById('result-amount');
+  const breakdownEl = document.getElementById('breakdown');
+  const flagArea = document.getElementById('flag-area');
+  const tableBody = document.getElementById('table-body');
+
+  function currentPrice() {
+    const raw = Number(priceInput.value);
+    return isFinite(raw) && priceInput.value !== '' ? clampPrice(raw) : 200;
+  }
+  function renderCalc() {
+    const price = currentPrice();
+    const rate = isRegistered ? RATE_REGISTERED : RATE_UNREGISTERED;
+    const base = isRegistered ? BASE_COMMISSION_REGISTERED : BASE_COMMISSION_UNREGISTERED;
+    const commission = calcCommission(price, isRegistered);
+    resultAmount.textContent = fmt(commission);
+    const diff = price - BASE_PRICE;
+    breakdownEl.innerHTML = diff >= 0
+      ? `基準${fmt(base)}万円 ＋ (${price}万円 − 200万円) × ${Math.round(rate * 100)}% ＝ <span class="formula">${fmt(commission)}万円</span>`
+      : `基準${fmt(base)}万円 − (200万円 − ${price}万円) ＝ <span class="formula">${fmt(commission)}万円</span>`;
+    flagArea.innerHTML = price < FLOOR_PRICE ? '<span class="flag approve">160万円未満：要承認</span>' : '';
+    highlightTableRow(price);
+  }
+  function setRegistered(registered) {
+    isRegistered = registered;
+    btnRegistered.classList.toggle('active', registered); btnRegistered.setAttribute('aria-pressed', String(registered));
+    btnUnregistered.classList.toggle('active', !registered); btnUnregistered.setAttribute('aria-pressed', String(!registered));
+    renderCalc();
+  }
+  function buildTable() {
+    tableBody.innerHTML = '';
+    for (let p = 150; p <= 350; p += 10) {
+      const tr = document.createElement('tr'); tr.dataset.price = p;
+      tr.innerHTML = `<td>${p}万円</td><td>${fmt(calcCommission(p, true))}</td><td>${fmt(calcCommission(p, false))}</td>`;
+      tableBody.appendChild(tr);
+    }
+  }
+  function highlightTableRow(price) {
+    const nearest = Math.round(price / 10) * 10;
+    [...tableBody.children].forEach(tr => tr.classList.toggle('current-row', Number(tr.dataset.price) === nearest && nearest >= 150 && nearest <= 350));
+  }
+  priceInput.addEventListener('focus', () => priceInput.select());
+  priceInput.addEventListener('input', () => {
+    const raw = Number(priceInput.value);
+    if (isFinite(raw) && priceInput.value !== '') priceSlider.value = clampPrice(raw);
+    renderCalc();
+  });
+  priceInput.addEventListener('blur', () => { const c = currentPrice(); priceInput.value = c; priceSlider.value = c; renderCalc(); });
+  priceSlider.addEventListener('input', () => { priceInput.value = priceSlider.value; renderCalc(); });
+  btnRegistered.addEventListener('click', () => setRegistered(true));
+  btnUnregistered.addEventListener('click', () => setRegistered(false));
+  buildTable(); renderCalc();
+
+  // ===================== 認証 =====================
+  const loginView = document.getElementById('login-view');
+  const mainView = document.getElementById('main-view');
+  const loginBtn = document.getElementById('login-btn');
+  const logoutBtn = document.getElementById('logout-btn');
+  const loginError = document.getElementById('login-error');
+
+  loginBtn.addEventListener('click', async () => {
+    const email = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    loginError.hidden = true;
+    loginBtn.disabled = true; loginBtn.textContent = 'ログイン中...';
+    const { error } = await sb.auth.signInWithPassword({ email, password });
+    loginBtn.disabled = false; loginBtn.textContent = 'ログイン';
+    if (error) { loginError.textContent = 'ログインできませんでした。メールアドレスとパスワードをご確認ください。'; loginError.hidden = false; return; }
+    enterApp();
+  });
+
+  logoutBtn.addEventListener('click', async () => { await sb.auth.signOut(); location.reload(); });
+
+  async function enterApp() {
+    loginView.hidden = true; mainView.hidden = false;
+    dealDateInput.value = todayStr();
+    await Promise.all([loadAgents(), loadDeals()]);
+  }
+
+  (async function init() {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) { await enterApp(); }
+  })();
+
+  // ===================== 応募者・営業マン =====================
+  let agentsCache = [];
+  const agentListEl = document.getElementById('agent-list');
+  const dealAgentSelect = document.getElementById('deal-agent-select');
+
+  async function loadAgents() {
+    const { data, error } = await sb.from('sales_agents').select('*').order('created_at', { ascending: false });
+    if (error) { console.error(error); return; }
+    agentsCache = data || [];
+    renderAgents();
+    renderDealAgentOptions();
+  }
+
+  function agentDealStats(agentId) {
+    const rows = dealsCache.filter(d => d.agent_id === agentId);
+    const total = rows.reduce((s, d) => s + Number(d.commission || 0), 0);
+    return { count: rows.length, total };
+  }
+
+  function renderAgents() {
+    document.getElementById('agent-count-total').textContent = agentsCache.length;
+    document.getElementById('agent-count-pending').textContent = agentsCache.filter(a => a.status === 'pending').length;
+    document.getElementById('agent-count-active').textContent = agentsCache.filter(a => a.status === 'active').length;
+
+    if (agentsCache.length === 0) {
+      agentListEl.innerHTML = '<p class="empty-state">まだ応募がありません</p>';
+      return;
+    }
+    agentListEl.innerHTML = agentsCache.map(a => {
+      const invBadge = a.invoice_registered ? '<span class="badge registered">登録済</span>' : '<span class="badge unregistered">未登録</span>';
+      const statusBadge = `<span class="badge ${a.status}">${AGENT_STATUS_LABEL[a.status] || a.status}</span>`;
+      const stats = agentDealStats(a.id);
+      const displayName = a.entity_type === 'corporate' ? `${a.company_name || ''}（${a.name}）` : a.name;
+      const products = (a.main_products || []).join('・');
+      const statusOptions = AGENT_STATUSES.map(s => `<option value="${s}" ${a.status === s ? 'selected' : ''}>${AGENT_STATUS_LABEL[s]}</option>`).join('');
+      return `
+        <div class="item-row">
+          <div>
+            <div class="item-title">${escapeHtml(displayName)}</div>
+            <div class="item-meta">${statusBadge}${invBadge}${escapeHtml(a.phone || '')}</div>
+            <div class="item-meta">${escapeHtml(a.sales_area || '')}${products ? ' ・ ' + escapeHtml(products) : ''}</div>
+            <div class="item-meta">案件${stats.count}件・歩合合計${fmt(stats.total)}万円</div>
+            <button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path || '')}">身分証明書を見る</button>
+          </div>
+          <div class="row-actions">
+            <select class="status-select" data-action="update-agent-status" data-id="${a.id}">${statusOptions}</select>
+            <button type="button" class="icon-btn danger" data-action="delete-agent" data-id="${a.id}">削除</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  function renderDealAgentOptions() {
+    const active = agentsCache.filter(a => a.status === 'active');
+    if (active.length === 0) {
+      dealAgentSelect.innerHTML = '<option value="">稼働中の営業マンがいません</option>';
+    } else {
+      dealAgentSelect.innerHTML = active.map(a => {
+        const label = a.entity_type === 'corporate' ? `${a.company_name || ''}（${a.name}）` : a.name;
+        return `<option value="${a.id}">${escapeHtml(label)}（${a.invoice_registered ? '登録済' : '未登録'}）</option>`;
+      }).join('');
+    }
+    updateDealPreview();
+  }
+
+  agentListEl.addEventListener('click', async (e) => {
+    const viewBtn = e.target.closest('button[data-action="view-doc"]');
+    if (viewBtn) {
+      const path = viewBtn.dataset.path;
+      if (!path) return;
+      const { data, error } = await sb.storage.from('id-documents').createSignedUrl(path, 60);
+      if (error) { alert('画像を取得できませんでした'); return; }
+      window.open(data.signedUrl, '_blank');
+      return;
+    }
+    const delBtn = e.target.closest('button[data-action="delete-agent"]');
+    if (delBtn) {
+      const agent = agentsCache.find(a => a.id === delBtn.dataset.id);
+      if (agent && confirm(`「${agent.name}」を削除しますか？記録済みの案件は残ります。`)) {
+        await sb.from('sales_agents').delete().eq('id', delBtn.dataset.id);
+        await loadAgents();
+      }
+    }
+  });
+
+  agentListEl.addEventListener('change', async (e) => {
+    const sel = e.target.closest('select[data-action="update-agent-status"]');
+    if (!sel) return;
+    await sb.from('sales_agents').update({ status: sel.value, reviewed_at: new Date().toISOString() }).eq('id', sel.dataset.id);
+    await loadAgents();
+  });
+
+  // ===================== 案件 =====================
+  let dealsCache = [];
+  const dealListEl = document.getElementById('deal-list');
+  const dealPriceInput = document.getElementById('deal-price-input');
+  const dealDateInput = document.getElementById('deal-date-input');
+  const dealNoteInput = document.getElementById('deal-note-input');
+  const dealPreviewAmount = document.getElementById('deal-preview-amount');
+  const dealAddBtn = document.getElementById('deal-add-btn');
+
+  async function loadDeals() {
+    const { data, error } = await sb.from('deals').select('*').order('created_at', { ascending: false });
+    if (error) { console.error(error); return; }
+    dealsCache = data || [];
+    renderDeals();
+    renderAgents();
+  }
+
+  function updateDealPreview() {
+    const agent = agentsCache.find(a => a.id === dealAgentSelect.value);
+    const price = Number(dealPriceInput.value);
+    dealPreviewAmount.textContent = (!agent || !isFinite(price)) ? '—' : fmt(calcCommission(price, agent.invoice_registered));
+  }
+
+  function renderDeals() {
+    const total = dealsCache.reduce((s, d) => s + Number(d.commission || 0), 0);
+    const paid = dealsCache.filter(d => d.status === '歩合支払済').reduce((s, d) => s + Number(d.commission || 0), 0);
+    document.getElementById('summary-count').textContent = dealsCache.length;
+    document.getElementById('summary-total').textContent = fmt(total);
+    document.getElementById('summary-unpaid').textContent = fmt(total - paid);
+
+    if (dealsCache.length === 0) {
+      dealListEl.innerHTML = '<p class="empty-state">まだ記録がありません</p>';
+      return;
+    }
+    dealListEl.innerHTML = dealsCache.map(d => {
+      const badge = d.invoice_registered_at_sale ? '<span class="badge registered">登録済</span>' : '<span class="badge unregistered">未登録</span>';
+      const statusOptions = DEAL_STATUSES.map(s => `<option value="${s}" ${d.status === s ? 'selected' : ''}>${s}</option>`).join('');
+      return `
+        <div class="item-row">
+          <div>
+            <div class="item-title">${fmt(Number(d.price))}万円 → 歩合${fmt(Number(d.commission))}万円</div>
+            <div class="item-meta">${badge}${escapeHtml(d.agent_name_snapshot || '')} ・ ${escapeHtml(d.deal_date || '')}</div>
+            ${d.note ? `<div class="item-meta">${escapeHtml(d.note)}</div>` : ''}
+          </div>
+          <div class="row-actions">
+            <select class="status-select" data-action="update-deal-status" data-id="${d.id}">${statusOptions}</select>
+            <button type="button" class="icon-btn danger" data-action="delete-deal" data-id="${d.id}">削除</button>
+          </div>
+        </div>`;
+    }).join('');
+  }
+
+  async function addDeal() {
+    const agent = agentsCache.find(a => a.id === dealAgentSelect.value);
+    const price = Number(dealPriceInput.value);
+    if (!agent) { dealAgentSelect.focus(); return; }
+    if (!isFinite(price) || price <= 0) { dealPriceInput.focus(); return; }
+    dealAddBtn.disabled = true;
+    try {
+      const commission = calcCommission(price, agent.invoice_registered);
+      const label = agent.entity_type === 'corporate' ? `${agent.company_name || ''}（${agent.name}）` : agent.name;
+      const { error } = await sb.from('deals').insert({
+        agent_id: agent.id,
+        agent_name_snapshot: label,
+        price,
+        invoice_registered_at_sale: agent.invoice_registered,
+        commission,
+        status: '成約',
+        deal_date: dealDateInput.value || todayStr(),
+        note: dealNoteInput.value.trim(),
+      });
+      if (error) throw error;
+      dealPriceInput.value = 200; dealNoteInput.value = ''; dealDateInput.value = todayStr();
+      updateDealPreview();
+      await loadDeals();
+    } catch (e) { console.error(e); } finally { dealAddBtn.disabled = false; }
+  }
+
+  dealListEl.addEventListener('click', async (e) => {
+    const delBtn = e.target.closest('button[data-action="delete-deal"]');
+    if (!delBtn) return;
+    if (confirm('この案件記録を削除しますか？')) { await sb.from('deals').delete().eq('id', delBtn.dataset.id); await loadDeals(); }
+  });
+  dealListEl.addEventListener('change', async (e) => {
+    const sel = e.target.closest('select[data-action="update-deal-status"]');
+    if (!sel) return;
+    await sb.from('deals').update({ status: sel.value }).eq('id', sel.dataset.id);
+    await loadDeals();
+  });
+
+  dealAgentSelect.addEventListener('change', updateDealPreview);
+  dealPriceInput.addEventListener('focus', () => dealPriceInput.select());
+  dealPriceInput.addEventListener('input', updateDealPreview);
+  dealAddBtn.addEventListener('click', addDeal);
+</script>
+
+</body>
+</html>
