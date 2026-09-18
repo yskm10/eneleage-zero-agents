@@ -100,6 +100,7 @@
   .icon-btn.danger { color: var(--danger); }
   .icon-btn.link { color: var(--accent); text-decoration: underline; }
   .empty-state { font-size: 13px; color: var(--text-faint); text-align: center; padding: 18px 4px; }
+  .agent-detail { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--card-border); }
   select.status-select { font-size: 12px; padding: 5px 8px; width: auto; }
   .summary-strip { display: flex; gap: 10px; margin-bottom: 14px; }
   .summary-box { flex: 1; background: var(--card); border: 1px solid var(--card-border); border-radius: 12px; padding: 12px 10px; text-align: center; }
@@ -397,6 +398,14 @@
         a.id_document_path_front ? `<button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path_front)}">身分証明書（表）</button>` : '',
         a.id_document_path_back ? `<button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path_back)}">身分証明書（裏）</button>` : '',
       ].join(' ');
+      const detailHtml = `
+        <div class="item-meta">住所：${escapeHtml(a.address || '未入力')}</div>
+        <div class="item-meta">メール：${escapeHtml(a.email || '未入力')}</div>
+        <div class="item-meta">LINE ID：${escapeHtml(a.line_id || '未入力')}</div>
+        ${a.invoice_registered ? `<div class="item-meta">インボイス番号：${escapeHtml(a.invoice_number || '未入力')}</div>` : ''}
+        <div class="item-meta">振込先：${escapeHtml(a.bank_name || '')} ${escapeHtml(a.bank_branch || '')} ${escapeHtml(a.bank_account_type || '')} ${escapeHtml(a.bank_account_number || '')}（${escapeHtml(a.bank_account_holder || '')}）</div>
+        ${a.note ? `<div class="item-meta">メモ：${escapeHtml(a.note)}</div>` : ''}
+      `;
       return `
         <div class="item-row">
           <div>
@@ -405,7 +414,8 @@
             <div class="item-meta">${escapeHtml(a.sales_area || '')}${products ? ' ・ ' + escapeHtml(products) : ''}</div>
             <div class="item-meta">案件${stats.count}件・歩合合計${fmt(stats.total)}万円</div>
             ${staffMobileLine}
-            <div class="item-meta">${docLinks}</div>
+            <button type="button" class="icon-btn link" data-action="toggle-detail" data-id="${a.id}">詳細を見る</button>
+            <div class="agent-detail" data-detail-id="${a.id}" hidden>${detailHtml}${docLinks ? `<div class="item-meta">${docLinks}</div>` : ''}</div>
           </div>
           <div class="row-actions">
             <select class="status-select" data-action="update-agent-status" data-id="${a.id}">${statusOptions}</select>
@@ -429,6 +439,15 @@
   }
 
   agentListEl.addEventListener('click', async (e) => {
+    const toggleBtn = e.target.closest('button[data-action="toggle-detail"]');
+    if (toggleBtn) {
+      const detail = agentListEl.querySelector(`.agent-detail[data-detail-id="${toggleBtn.dataset.id}"]`);
+      if (detail) {
+        detail.hidden = !detail.hidden;
+        toggleBtn.textContent = detail.hidden ? '詳細を見る' : '詳細を閉じる';
+      }
+      return;
+    }
     const viewBtn = e.target.closest('button[data-action="view-doc"]');
     if (viewBtn) {
       const path = viewBtn.dataset.path;

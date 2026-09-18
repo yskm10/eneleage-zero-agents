@@ -118,6 +118,10 @@
       <input type="tel" id="staff-mobile" placeholder="090-0000-0000">
     </div>
     <div class="field">
+      <label class="field-label" for="email">メールアドレス<span class="req">*</span></label>
+      <input type="text" id="email" placeholder="example@example.com" inputmode="email">
+    </div>
+    <div class="field">
       <label class="field-label" for="sales-area">営業エリア<span class="req">*</span></label>
       <input type="text" id="sales-area" placeholder="例：大阪市内、関西一円">
     </div>
@@ -277,6 +281,7 @@
     const address = document.getElementById('address').value.trim();
     const phone = document.getElementById('phone').value.trim();
     const lineId = document.getElementById('line-id').value.trim();
+    const email = document.getElementById('email').value.trim();
     const staffMobile = document.getElementById('staff-mobile').value.trim();
     const salesArea = document.getElementById('sales-area').value.trim();
     const bankName = document.getElementById('bank-name').value.trim();
@@ -287,8 +292,12 @@
     const idFileFront = document.getElementById('id-document-front').files[0];
     const idFileBack = document.getElementById('id-document-back').files[0];
 
-    if (!name || !address || !phone || !lineId || !salesArea || !bankName || !bankBranch || !bankAccountNumber || !bankAccountHolder) {
+    if (!name || !address || !phone || !lineId || !email || !salesArea || !bankName || !bankBranch || !bankAccountNumber || !bankAccountHolder) {
       showMsg('error', '必須項目（*）が未入力の箇所があります。ご確認ください。');
+      return;
+    }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      showMsg('error', 'メールアドレスの形式をご確認ください。');
       return;
     }
     if (entityType === 'corporate' && (!companyName || !staffMobile)) {
@@ -330,6 +339,7 @@
         address,
         phone,
         line_id: lineId,
+        email,
         staff_mobile: entityType === 'corporate' ? staffMobile : null,
         sales_area: salesArea,
         invoice_registered: invoiceRegistered,
