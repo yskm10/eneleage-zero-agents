@@ -392,6 +392,11 @@
       const displayName = a.entity_type === 'corporate' ? `${a.company_name || ''}（${a.name}）` : a.name;
       const products = (a.main_products || []).join('・');
       const statusOptions = AGENT_STATUSES.map(s => `<option value="${s}" ${a.status === s ? 'selected' : ''}>${AGENT_STATUS_LABEL[s]}</option>`).join('');
+      const staffMobileLine = a.staff_mobile ? `<div class="item-meta">担当者携帯：${escapeHtml(a.staff_mobile)}</div>` : '';
+      const docLinks = [
+        a.id_document_path_front ? `<button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path_front)}">身分証明書（表）</button>` : '',
+        a.id_document_path_back ? `<button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path_back)}">身分証明書（裏）</button>` : '',
+      ].join(' ');
       return `
         <div class="item-row">
           <div>
@@ -399,7 +404,8 @@
             <div class="item-meta">${statusBadge}${invBadge}${escapeHtml(a.phone || '')}</div>
             <div class="item-meta">${escapeHtml(a.sales_area || '')}${products ? ' ・ ' + escapeHtml(products) : ''}</div>
             <div class="item-meta">案件${stats.count}件・歩合合計${fmt(stats.total)}万円</div>
-            <button type="button" class="icon-btn link" data-action="view-doc" data-path="${escapeHtml(a.id_document_path || '')}">身分証明書を見る</button>
+            ${staffMobileLine}
+            <div class="item-meta">${docLinks}</div>
           </div>
           <div class="row-actions">
             <select class="status-select" data-action="update-agent-status" data-id="${a.id}">${statusOptions}</select>

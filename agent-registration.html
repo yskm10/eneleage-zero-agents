@@ -80,7 +80,6 @@
 <header>
   <p class="eyebrow">ENELEAGE Zero</p>
   <h1>営業パートナー登録</h1>
-  <p class="lede">個人・法人どちらでもご登録いただけます。振込先・身分証明書は歩合のお支払いに必要な情報です。</p>
 </header>
 
 <div id="msg-area"></div>
@@ -110,9 +109,13 @@
         <input type="tel" id="phone" placeholder="090-0000-0000">
       </div>
       <div class="field">
-        <label class="field-label" for="line-id">LINE ID</label>
-        <input type="text" id="line-id" placeholder="任意">
+        <label class="field-label" for="line-id">LINE ID<span class="req">*</span></label>
+        <input type="text" id="line-id" placeholder="電気明細のやり取りに使用します">
       </div>
+    </div>
+    <div class="field" id="staff-mobile-field" hidden>
+      <label class="field-label" for="staff-mobile">担当者携帯電話番号<span class="req">*</span></label>
+      <input type="tel" id="staff-mobile" placeholder="090-0000-0000">
     </div>
     <div class="field">
       <label class="field-label" for="sales-area">営業エリア<span class="req">*</span></label>
@@ -164,10 +167,14 @@
   <div class="card">
     <h2>身分証明書</h2>
     <div class="field">
-      <label class="field-label" for="id-document">運転免許証・マイナンバーカードなどの写真<span class="req">*</span></label>
-      <input type="file" id="id-document" accept="image/*,application/pdf">
-      <p class="hint">画像またはPDFでアップロードしてください。</p>
+      <label class="field-label" for="id-document-front">運転免許証・マイナンバーカードなどの写真（表面）<span class="req">*</span></label>
+      <input type="file" id="id-document-front" accept="image/*,application/pdf">
     </div>
+    <div class="field">
+      <label class="field-label" for="id-document-back">裏面（記載がある場合）</label>
+      <input type="file" id="id-document-back" accept="image/*,application/pdf">
+    </div>
+    <p class="hint">画像またはPDFでアップロードしてください。裏面に住所などの記載がある証明書は、裏面もアップロードしてください。</p>
   </div>
 
   <div class="card">
@@ -176,7 +183,11 @@
       <label class="checkbox-chip"><input type="checkbox" value="太陽光"> 太陽光</label>
       <label class="checkbox-chip"><input type="checkbox" value="リフォーム・外壁塗装"> リフォーム・外壁塗装</label>
       <label class="checkbox-chip"><input type="checkbox" value="注文住宅"> 注文住宅</label>
-      <label class="checkbox-chip"><input type="checkbox" value="その他"> その他</label>
+      <label class="checkbox-chip"><input type="checkbox" id="product-other-checkbox" value="その他"> その他</label>
+    </div>
+    <div class="field" id="product-other-field" style="margin-top: 12px;" hidden>
+      <label class="field-label" for="product-other-detail">その他の内容</label>
+      <input type="text" id="product-other-detail" placeholder="具体的にご記入ください">
     </div>
   </div>
 
@@ -197,11 +208,14 @@
   const companyNameInput = document.getElementById('company-name');
   const nameLabel = document.getElementById('name-label');
 
+  const staffMobileField = document.getElementById('staff-mobile-field');
+
   btnIndividual.addEventListener('click', () => {
     entityType = 'individual';
     btnIndividual.classList.add('active'); btnIndividual.setAttribute('aria-pressed', 'true');
     btnCorporate.classList.remove('active'); btnCorporate.setAttribute('aria-pressed', 'false');
     companyField.hidden = true;
+    staffMobileField.hidden = true;
     nameLabel.innerHTML = '氏名<span class="req">*</span>';
   });
   btnCorporate.addEventListener('click', () => {
@@ -209,7 +223,8 @@
     btnCorporate.classList.add('active'); btnCorporate.setAttribute('aria-pressed', 'true');
     btnIndividual.classList.remove('active'); btnIndividual.setAttribute('aria-pressed', 'false');
     companyField.hidden = false;
-    nameLabel.innerHTML = '担当者名<span class="req">*</span>';
+    staffMobileField.hidden = false;
+    nameLabel.innerHTML = '代表者役職・名前<span class="req">*</span>';
   });
 
   const btnInvRegistered = document.getElementById('btn-inv-registered');
@@ -234,6 +249,13 @@
     cb.addEventListener('change', () => chip.classList.toggle('checked', cb.checked));
   });
 
+  const productOtherCheckbox = document.getElementById('product-other-checkbox');
+  const productOtherField = document.getElementById('product-other-field');
+  productOtherCheckbox.addEventListener('change', () => {
+    productOtherField.hidden = !productOtherCheckbox.checked;
+    if (!productOtherCheckbox.checked) document.getElementById('product-other-detail').value = '';
+  });
+
   function showMsg(type, text) {
     document.getElementById('msg-area').innerHTML = `<div class="msg ${type}">${text}</div>`;
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -248,24 +270,27 @@
     const name = document.getElementById('name').value.trim();
     const address = document.getElementById('address').value.trim();
     const phone = document.getElementById('phone').value.trim();
+    const lineId = document.getElementById('line-id').value.trim();
+    const staffMobile = document.getElementById('staff-mobile').value.trim();
     const salesArea = document.getElementById('sales-area').value.trim();
     const bankName = document.getElementById('bank-name').value.trim();
     const bankBranch = document.getElementById('bank-branch').value.trim();
     const bankAccountNumber = document.getElementById('bank-account-number').value.trim();
     const bankAccountHolder = document.getElementById('bank-account-holder').value.trim();
     const companyName = document.getElementById('company-name').value.trim();
-    const idFile = document.getElementById('id-document').files[0];
+    const idFileFront = document.getElementById('id-document-front').files[0];
+    const idFileBack = document.getElementById('id-document-back').files[0];
 
-    if (!name || !address || !phone || !salesArea || !bankName || !bankBranch || !bankAccountNumber || !bankAccountHolder) {
+    if (!name || !address || !phone || !lineId || !salesArea || !bankName || !bankBranch || !bankAccountNumber || !bankAccountHolder) {
       showMsg('error', '必須項目（*）が未入力の箇所があります。ご確認ください。');
       return;
     }
-    if (entityType === 'corporate' && !companyName) {
-      showMsg('error', '法人名をご入力ください。');
+    if (entityType === 'corporate' && (!companyName || !staffMobile)) {
+      showMsg('error', '法人名・担当者携帯電話番号をご入力ください。');
       return;
     }
-    if (!idFile) {
-      showMsg('error', '身分証明書の写真をアップロードしてください。');
+    if (!idFileFront) {
+      showMsg('error', '身分証明書の写真（表面）をアップロードしてください。');
       return;
     }
 
@@ -273,12 +298,24 @@
     submitBtn.textContent = '送信中...';
 
     try {
-      const ext = idFile.name.split('.').pop();
-      const path = `applications/${Date.now()}-${crypto.randomUUID()}.${ext}`;
-      const { error: uploadError } = await sb.storage.from('id-documents').upload(path, idFile);
-      if (uploadError) throw uploadError;
+      const uploadOne = async (file) => {
+        const ext = file.name.split('.').pop();
+        const path = `applications/${Date.now()}-${crypto.randomUUID()}.${ext}`;
+        const { error: uploadError } = await sb.storage.from('id-documents').upload(path, file);
+        if (uploadError) throw uploadError;
+        return path;
+      };
 
-      const mainProducts = [...document.querySelectorAll('#products-group input:checked')].map(cb => cb.value);
+      const pathFront = await uploadOne(idFileFront);
+      const pathBack = idFileBack ? await uploadOne(idFileBack) : null;
+
+      const mainProducts = [...document.querySelectorAll('#products-group input:checked')].map(cb => {
+        if (cb.value === 'その他') {
+          const detail = document.getElementById('product-other-detail').value.trim();
+          return detail ? `その他（${detail}）` : 'その他';
+        }
+        return cb.value;
+      });
 
       const { error: insertError } = await sb.from('sales_agents').insert({
         entity_type: entityType,
@@ -286,7 +323,8 @@
         name,
         address,
         phone,
-        line_id: document.getElementById('line-id').value.trim(),
+        line_id: lineId,
+        staff_mobile: entityType === 'corporate' ? staffMobile : null,
         sales_area: salesArea,
         invoice_registered: invoiceRegistered,
         invoice_number: invoiceRegistered ? document.getElementById('invoice-number').value.trim() : null,
@@ -295,7 +333,8 @@
         bank_account_type: document.getElementById('bank-account-type').value,
         bank_account_number: bankAccountNumber,
         bank_account_holder: bankAccountHolder,
-        id_document_path: path,
+        id_document_path_front: pathFront,
+        id_document_path_back: pathBack,
         main_products: mainProducts,
         status: 'pending',
       });
