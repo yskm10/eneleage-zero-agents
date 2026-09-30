@@ -1,4 +1,9 @@
-# CLAUDE.md
+# PROJECT_NOTES — ENELEAGE Zero 営業パートナー管理(eneleage-zero-agents)
+
+このファイルは、新しいチャットでClaudeに作業を頼むときに最初に渡す「引き継ぎ資料」です。
+最新版の確認先: `https://raw.githubusercontent.com/yskm10/eneleage-zero-agents/main/PROJECT_NOTES.md`。作業前に必ず最新を確認し、差分があればそれを土台にしてから編集すること。
+
+## Claudeへのお願い
 
 このリポジトリは、非エンジニアの担当者(森)がClaudeに依頼しながら運用している静的サイトです。変更を依頼された際は、専門用語を避けて具体的に説明し、大きな変更は小さいステップに分けて進めてください。可能であれば変更前にコミットしておき、うまくいかなければ無理に直そうとせず元に戻して再度試してください。
 
